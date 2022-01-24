@@ -1,3 +1,102 @@
+task printList {
+    def datas = [1, 2, 3, 4, 5, 6]
+
+    StringBuffer bf = new StringBuffer()
+    datas.forEach {
+        bf.append(it).append(",")
+
+    }
+
+    println "element:${bf}"
+}
+
+//闭包一个参数
+task helloClosure {
+
+    customEach {
+        println it
+    }
+
+}
+
+static def customEach(closure) {
+    for (int i in 0..10) {
+        closure(i)
+    }
+}
+
+//两个参数
+task mapClosure {
+    eachMap{k,v->
+        println "k:${k}, v:${v}"
+    }
+}
+
+def eachMap(closure) {
+
+    def mapp = ["name": "张胜男", "age": 22]
+    def map = [a: 1, b: 2, c: 3]
+//    map.forEach{ todo 会报错的
+//        println "string it: ${it}"
+//    }
+    for(it in mapp){
+        closure(it.key,it.value)
+    }
+
+}
+
+
+task helloDelegate{
+
+//    new Delegate() todo 删了？
+
+}
+
+//这个是添加进taskmanager中，但是不触发。只有后面的task触发才会启动该task
+tasks.create('secondTsk'){
+    doFirst {
+        println "secondTsk dofirst! "
+    }
+
+    doLast {
+        println "secondTsk doLast! "
+    }
+}
+
+
+task secondTskSelf{
+    doFirst {
+        println "secondTsk dofirst! "
+    }
+
+    doLast {
+        println "secondTsk doLast! "
+    }
+}
+
+// 任务依赖,按照顺序执行
+task sdkPreInit{
+    println "sdkPreInit---"
+}
+
+task sdkStart(dependsOn: sdkPreInit){
+    println "sdkStart---"
+}
+
+task sdkEnd{
+    dependsOn sdkStart,sdkPreInit
+    println "sdkEnd---"
+
+}
+
+
+
+
+
+
+
+
+
 
 
 

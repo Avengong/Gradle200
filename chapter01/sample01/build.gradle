@@ -1,7 +1,8 @@
 plugins {
     id 'com.android.application'
 }
-apply from: "extra_book.gradle"
+//直接引用即可 nice！
+apply from: "${rootDir}/app/extra_book.gradle"
 
 android {
     compileSdk 31

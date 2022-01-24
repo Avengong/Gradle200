@@ -15,3 +15,20 @@ buildscript {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+
+// 子模块
+subprojects {
+//    apply plugin :'java'
+    repositories {
+
+    }
+
+}
+// 所有模块
+allprojects {
+
+    repositories {
+
+    }
+
+}

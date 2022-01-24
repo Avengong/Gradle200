@@ -3,8 +3,36 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        jcenter() // Warning: this repository is going to shut down soon
     }
 }
 rootProject.name = "Gradle200"
+// 第一级目录的sample
 include ':app'
+// 第二级目录的sample01 非常吊啊 可以自定义目录
+include ':sample01'
+project(':sample01').projectDir = new File(rootDir, 'chapter01/sample01')
+// sample022 project的名字是可以修改的，并不一定要跟文件夹名字相同
+include ':sample022'
+project(":sample022").projectDir = new File(rootDir, "chapter02/sample02/app")
+
+
+// 根目录下的 模块引用
+include ':gradle-one'
+// 多级目录下的 module的引用
+// 这个也可以的
+//def modules = new File(rootDir, "modules")
+//for (File f : modules.listFiles()) {
+//    include ":${modules.name}:${f.name}"
+//}
+//// 这个也可以
+new File("${rootDir}/modules").eachDir{
+    include ":modules:${it.name}"
+}
+
+//=============
+//至此，我们知道可以随意定义一个project/module的所在位置，非常灵活！
+
+//=============
+
+//include ':gradle-two'
+//include ':gradle-three'
