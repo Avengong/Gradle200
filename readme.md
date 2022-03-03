@@ -2,9 +2,7 @@ https://zhuanlan.zhihu.com/p/449012470
 
 # 疑问
 
-1 app可以看做一个project工程，module可以看做一个工程吗？
-
-2 当在app和module目录中的build.gradle文件中获取到的rootdir是什么？projectDir又是什么？ 答：
+1 app可以看做一个project工程，module可以看做一个工程吗？ 是的，本来就是的。 2 当在app和module目录中的build.gradle文件中获取到的rootdir是什么？projectDir又是什么？ 答：
 rootDir指的是项目根目录。projectDir指的是当前project的路径，比如是app，则表示是app当前路径，如果是module则是当前module的路径。 例子：
 
 ```
