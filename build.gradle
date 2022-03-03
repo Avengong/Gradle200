@@ -1,11 +1,14 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+println "=====rootBuild==projectDir:${projectDir},rootDir:${rootDir}，" +
+        "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
 buildscript {
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:7.0.3"
+//        classpath "com.android.tools.build:gradle:7.0.3"
+        classpath "com.android.tools.build:gradle:4.2.0"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -16,19 +19,53 @@ task clean(type: Delete) {
     delete rootProject.buildDir
 }
 
-// 子模块
+// 子模块,所有的子模块？？
 subprojects {
 //    apply plugin :'java'
-    repositories {
+    println "subprojects name:${name}"
+//    subprojects name:app
+//    subprojects name:gradle-one
+//    subprojects name:modules
+//    subprojects name:sample01
+//    subprojects name:sample022
+//    subprojects name:gradle-three
+//    subprojects name:gradle-two
 
+    repositories {
+//        println "subprojects--repositories name:${name}"
+        google()
+        mavenCentral()
     }
 
 }
-// 所有模块
+// 所有模块. 相对与subprojects，多了个跟项目gradle777
+//allprojects name:Gradle777
+//allprojects name:app
+//allprojects name:gradle-one
+//allprojects name:modules
+//allprojects name:sample01
+//allprojects name:sample022
+//allprojects name:gradle-three
+//allprojects name:gradle-two
+
 allprojects {
-
+    println "allprojects name:${name}"
     repositories {
-
+//        google()
+//        mavenCentral()
     }
 
+}
+
+
+project.ext {
+    version_code=100
+    sersion_name="独立的--3.3.1"
+    minSdk =23
+}
+//这个自定义属性可以放到任何地方
+ext {
+    version_code=90
+    sersion_name="root-3.3.1"
+    minSdk =21
 }

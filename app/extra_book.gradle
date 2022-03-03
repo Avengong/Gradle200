@@ -1,3 +1,4 @@
+//第一种方式 创建task
 task printList {
     def datas = [1, 2, 3, 4, 5, 6]
 
@@ -27,7 +28,7 @@ static def customEach(closure) {
 
 //两个参数
 task mapClosure {
-    eachMap{k,v->
+    eachMap { k, v ->
         println "k:${k}, v:${v}"
     }
 }
@@ -39,21 +40,21 @@ def eachMap(closure) {
 //    map.forEach{ todo 会报错的
 //        println "string it: ${it}"
 //    }
-    for(it in mapp){
-        closure(it.key,it.value)
+    for (it in mapp) {
+        closure(it.key, it.value)
     }
 
 }
 
 
-task helloDelegate{
+task helloDelegate {
 
 //    new Delegate() todo 删了？
 
 }
 
-//这个是添加进taskmanager中，但是不触发。只有后面的task触发才会启动该task
-tasks.create('secondTsk'){
+//第二种方式  这个是添加进taskmanager中，但是不触发。只有后面的task触发才会启动该task
+tasks.create('secondTsk') {
     doFirst {
         println "secondTsk dofirst! "
     }
@@ -64,7 +65,7 @@ tasks.create('secondTsk'){
 }
 
 
-task secondTskSelf{
+task secondTskSelf {
     doFirst {
         println "secondTsk dofirst! "
     }
@@ -75,19 +76,127 @@ task secondTskSelf{
 }
 
 // 任务依赖,按照顺序执行
-task sdkPreInit{
+task sdkPreInit {
     println "sdkPreInit---"
 }
 
-task sdkStart(dependsOn: sdkPreInit){
+task sdkStart(dependsOn: sdkPreInit) {
     println "sdkStart---"
 }
 
-task sdkEnd{
-    dependsOn sdkStart,sdkPreInit
+task sdkEnd {
+    dependsOn sdkStart, sdkPreInit
     println "sdkEnd---"
 
 }
+//任务本质上就是 Task 类型的变量
+//只有单独跑这个task，dofirst和dolast才会执行
+task exeHello {
+
+    doFirst {
+        println 'exeHello-real-doFirst'
+    }
+
+
+    println 'dolast1'
+    println project.hasProperty('exeHello')
+    println project.property("VERSION_CODE")
+    println "TEST_VERSION????? :${project.hasProperty("TEST_VERSION")}"
+    println "TEST_VERSION????? :${project.findProperty("TEST_VERSION")}"
+    doLast {
+        println 'exeHello-real-doLast'
+
+    }
+}
+
+exeHello.doFirst {
+
+    println 'exeHello-doFirst'
+}
+exeHello.doLast {
+
+    println 'exeHello-doLast'
+    println project.hasProperty('exeHello')
+    println project.property("VERSION_CODE")
+    println "TEST_VERSION????? :${project.hasProperty("TEST_VERSION")}"
+
+}
+//自定义属性
+ext.age = 22
+
+sourceSets.all {
+    ext.resourceDir=null
+}
+
+sourceSets {
+
+    demo{
+        resourceDir='src/cus/res'
+    }
+
+    main {
+        resourceDir='src/main/res'
+//        manifest.srcFile "src/main/AndroidManifest.xml"
+//        if(是否为debug打包) {
+//            manifest.srcFile "${projectDir}/src/main/debug/AndroidManifest.xml"
+//        } else {
+//            manifest.srcFile "${projectDir}/src/main/release/AndroidManifest.xml"
+//        }
+
+//        manifest {
+//            srcFile 'src/main/AndroidManifest.xml'
+//            manifest.srcFile "${projectDir}/src/main/AndroidManifest.xml"
+//        }
+//        manifest.srcFile 'src/main/AndroidManifest.xml'
+
+        //自定义res路径
+        resources {
+            srcDirs "src/main/res","src/main/res2",'src/cus/res'
+            srcDirs.each{
+                println "res--名字2： ${it.name} ， 路径：${it.path}"
+            }
+        }
+
+        //自定义java源码路径
+       java{
+           srcDirs  'src/main',"src/cus/com"
+           sourceSets.each{
+               println "java-名字： ${it.name} ， 路径：${it.java.srcDirs}"
+           }
+           srcDirs.each{
+               println "java-名字2： ${it.name} ， 路径：${it.path}"
+           }
+
+       }
+        //自定义manifest路径
+        //自定义assets路径
+        //自定义jni路径
+
+
+    }
+
+
+}
+
+println "最小的版本是${minSdk}"
+println "sersion_name是${sersion_name}"
+println "version_code是${version_code}"
+println "version_co======"
+
+task printProperty {
+    println age
+    println "最小的版本是${minSdk}"
+    println "sersion_name是${sersion_name}"
+    println "version_code是${version_code}"
+    sourceSets.each{
+        println "${it.name} 的 resourceDir 为： ${it.resourceDir}"
+        println "${it.name} 的 res 为： ${it.resources.toString()}"
+    }
+}
+
+
+
+
 
 
 

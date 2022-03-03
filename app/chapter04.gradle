@@ -1,0 +1,129 @@
+
+
+
+//方式二
+def Task exeT1=task("exeT1",group: BasePlugin.BUILD_GROUP,{
+
+})
+exeT1.doLast {
+
+    println " name: ${exeT1.name}, group:${exeT1.group}"
+}
+
+//方式一
+def Task exeCreateTask0=task("exeCreateTask0")
+exeCreateTask0.doLast {
+    println "exeCreateTask0: dolast! "
+
+}
+
+
+//方式三
+task exe2{
+    description "abcaaaaaaaaa"
+    dependsOn exeCreateTask0
+    group BasePlugin.BUILD_GROUP
+    doLast {
+        println "exe2: dolast! ,description:${description}"
+    }
+}
+
+//方式四
+tasks.create("exe4"){
+
+    description "vvvvvvvvvvvvvvvv"
+    dependsOn exeCreateTask0
+    group BasePlugin.BUILD_GROUP
+    doLast {
+        println "create: dolast! description:${description}"
+    }
+}
+
+////////////////////////////////////////////////////////////////
+//访问  好骚啊  这个操作
+//通过taskscontainer
+tasks["exe4"].doFirst {
+    println "exe4: doFirst-----! description:${description}"
+
+    //通过路径
+    println  tasks.findByPath(":app:exe2")
+    println  tasks.getByPath("exe2")
+    println  tasks.findByPath("exe244") //找不到返回null
+//    println  tasks.getByPath("exe244") //找不到会报错
+
+    //通过名字
+    println  tasks.getByName("exeCreateTask0")
+    println  tasks.findByName("exe2")
+    println  tasks.findByName("exe442")
+
+}
+
+
+////////////////////////////////////////////////////////////////
+//任务的分组和描述
+
+
+
+////////////////////////////////////////////////////////////////
+
+//task exe5 << {
+//    println "exe5: 代替dolast-----! description:${description}"
+//
+//}
+
+////////////////////////////////////////////////////////////////
+// task执行分析
+
+def Task exeAnalysis=task exeAnalysis(type:ExeAnalysis){
+//    println "exeAnalysis: do jb -----! description:${description}" //不会走
+}
+exeAnalysis.doFirst {
+    println "exeAnalysis: doFirst-----! description:${description}"
+}
+
+exeAnalysis.doLast {
+    println "exeAnalysis: doLast-----! description:${description}"
+}
+
+class ExeAnalysis extends DefaultTask{
+
+    @TaskAction //这个必须要添加 ，表示加入到actions列表中
+    def doSelf(){
+        println "exeAnalysis: doSelf-----! description:${description}"
+    }
+}
+
+
+
+////////////////////////////////////////////////////////////////
+exe2.mustRunAfter(exeAnalysis) //牛逼
+tasks["assemble"].mustRunAfter(exeAnalysis)
+
+////////////////////////////////////////////////////////////////
+
+tasks.create("exe10"){
+    doLast {
+        println "任务的启用功能 dolast！"
+    }
+
+}
+tasks.findByName("exe10").enabled(false)
+tasks.findByName("exe10").enabled(true)
+
+println "isdebug ${buildconfi}"
+
+android.applicationVariants.all{ it->
+
+
+
+}
+
+////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////
+
+
+
+

@@ -2,8 +2,9 @@ plugins {
     id 'com.android.application'
 }
 //直接引用即可 nice！
-apply from: "${rootDir}/app/extra_book.gradle"
-
+//apply from: "${rootDir}/app/extra_book.gradle"
+println "=====app2==projectDir:${projectDir},rootDir:${rootDir}，" +
+        "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
 android {
     compileSdk 31
 

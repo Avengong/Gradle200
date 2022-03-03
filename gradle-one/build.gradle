@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.library'
 }
+println "=====module==projectDir:${projectDir},rootDir:${rootDir}，" +
+        "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
 
 android {
     compileSdk 31

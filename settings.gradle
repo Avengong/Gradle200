@@ -1,20 +1,20 @@
-dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-    repositories {
-        google()
-        mavenCentral()
-    }
-}
-rootProject.name = "Gradle200"
+//dependencyResolutionManagement {
+//    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+//    repositories {
+//        google()
+//        mavenCentral()
+//    }
+//}
+rootProject.name = "Gradle777"
 // 第一级目录的sample
 include ':app'
 // 第二级目录的sample01 非常吊啊 可以自定义目录
 include ':sample01'
 project(':sample01').projectDir = new File(rootDir, 'chapter01/sample01')
-// sample022 project的名字是可以修改的，并不一定要跟文件夹名字相同
+// sample022 project工程的名字是可以修改的，并不一定要跟文件夹名字相同
 include ':sample022'
 project(":sample022").projectDir = new File(rootDir, "chapter02/sample02/app")
-
+// 因此，新建一个工程，需要指定工程的名字和入口目录。
 
 // 根目录下的 模块引用
 include ':gradle-one'
@@ -24,7 +24,7 @@ include ':gradle-one'
 //for (File f : modules.listFiles()) {
 //    include ":${modules.name}:${f.name}"
 //}
-//// 这个也可以
+//// 这种遍历方式也可以
 new File("${rootDir}/modules").eachDir{
     include ":modules:${it.name}"
 }

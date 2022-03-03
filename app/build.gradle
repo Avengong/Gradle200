@@ -1,8 +1,30 @@
-plugins {
-    id 'com.android.application'
-}
+//plugins {
+//    id 'com.android.application'
+//}
+apply plugin:'com.android.application'
 apply from: "extra_book.gradle"
+apply from: "chapter04.gradle"
+println "=====app1==projectDir:${projectDir},rootDir:${rootDir}，" +
+        "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
 
+//这个可以
+//rootProject.subprojects {
+////    apply plugin :'java'
+//    println "subprojects name:${name}"
+////    subprojects name:app
+////    subprojects name:gradle-one
+////    subprojects name:modules
+////    subprojects name:sample01
+////    subprojects name:sample022
+////    subprojects name:gradle-three
+////    subprojects name:gradle-two
+//
+//    repositories {
+////        println "subprojects--repositories name:${name}"
+//
+//    }
+//
+//}
 android {
     compileSdk 31
 
