@@ -110,7 +110,7 @@ tasks.create("exe10"){
 tasks.findByName("exe10").enabled(false)
 tasks.findByName("exe10").enabled(true)
 
-println "isdebug ${buildconfi}"
+//println "isdebug ${buildconfig}"
 
 android.applicationVariants.all{ it->
 
