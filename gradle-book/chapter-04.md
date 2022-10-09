@@ -141,7 +141,7 @@ class ExeAnalysis extends DefaultTask{
 
 ## 4.6 任务的顺序执行
 
-可以操作两个任务的先后顺序，来控制任务的执行顺序。mustRunAfter/shouldRunAfter 比如： publis任务必须要在assemble任务之后执行。
+可以操作两个任务的先后顺序，来控制任务的执行顺序。mustRunAfter/shouldRunAfter 比如： publish任务必须要在assemble任务之后执行。
 assemble任务必须要在clean任务后执行。简单的一笔啊！
 
 比如： 打包必须要在单元测试后执行，打包成功后才能进行部署发布等。

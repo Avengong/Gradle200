@@ -130,12 +130,13 @@ sourceSets.all {
 
 sourceSets {
 
-    demo{
-        resourceDir='src/cus/res'
-    }
+//    demo{
+//        resourceDir='src/cus/res'
+//    }
 
     main {
         resourceDir='src/main/res'
+
 //        manifest.srcFile "src/main/AndroidManifest.xml"
 //        if(是否为debug打包) {
 //            manifest.srcFile "${projectDir}/src/main/debug/AndroidManifest.xml"
@@ -159,7 +160,8 @@ sourceSets {
 
         //自定义java源码路径
        java{
-           srcDirs  'src/main',"src/cus/com"
+//           srcDirs  'src/main',"src/cus/com"
+           srcDirs  "src/cus/com"
            sourceSets.each{
                println "java-名字： ${it.name} ， 路径：${it.java.srcDirs}"
            }
@@ -171,7 +173,6 @@ sourceSets {
         //自定义manifest路径
         //自定义assets路径
         //自定义jni路径
-
 
     }
 
