@@ -1,0 +1,48 @@
+apply from: "booter.gradle"
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'groovy'
+apply plugin: 'java'
+
+
+
+sourceSets {
+    main {
+        java {
+            srcDirs += []
+        }
+        kotlin {
+            srcDirs += ['src/main/kotlin', 'src/main/java']
+        }
+    }
+    test {
+        java {
+            srcDirs += []
+        }
+        kotlin {
+            srcDirs += ['src/main/kotlin', 'src/main/java']
+        }
+    }
+}
+
+dependencies {
+    kapt 'com.google.auto.service:auto-service:1.0'
+    api gradleApi()
+    api 'org.ow2.asm:asm:7.1'
+    api 'org.ow2.asm:asm-analysis:7.1'
+    api 'org.ow2.asm:asm-commons:7.1'
+    api 'org.ow2.asm:asm-tree:7.1'
+    api 'org.ow2.asm:asm-util:7.1'
+    compileOnly 'com.android.tools.build:gradle:4.0.0'
+    testCompileOnly 'com.android.tools.build:gradle:4.0.0'
+}
+
+gradlePlugin {
+    plugins {
+        boosterPlugin {
+            id = 'com.didiglobal.booster'
+            displayName = "${id}.gradle.plugin"
+            description = project.description ?: project.name
+            implementationClass = 'com.didiglobal.booster.gradle.BoosterPlugin'
+        }
+    }
+}

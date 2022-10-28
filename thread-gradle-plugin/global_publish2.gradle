@@ -1,0 +1,522 @@
+apply plugin: 'maven-publish'
+
+
+final String DEF_REPO_USER = "default"
+final String DEF_REPO_PWD = "default"
+
+final String DEF_APK_GROUP_ID = "com.dysdk.apk"
+final String DEF_LIB_GROUP_ID = "com.dysdk.lib"
+
+final String BUILD_PLATFORM_ENV = 'BUILD_CONFIG'
+
+final String SNAPSHOT_VERSION_SUFFIX = '-SNAPSHOT'
+
+
+final String SNAPSHOT_REPO_URL = "https://nexus.2tianxin.com/nexus/repository/android-snapshots/"
+final String RELEASE_REPO_URL = "https://nexus.2tianxin.com/nexus/repository/android-releases"
+
+final String PUBLICATION_ID = "MavenArtifact"
+final String PUBLISH_TASK_NAME = "publish${PUBLICATION_ID}PublicationToMavenRepository"
+
+final String PROJECT_DIR = project.projectDir.absolutePath
+final String BUILD_DIR = project.buildDir.absolutePath
+final String BUILD_OUTPUT_DIRNAME = 'outputs'
+final String NDK_OBJ_FILE_DIR = "${BUILD_DIR}/intermediates/ndkBuild/release/obj/local"
+final String NDK_OBJ_FILE_DIR_NEW = "${BUILD_DIR}/intermediates/cmake/release/obj"
+
+final String zipMappingFileName = "mapping.zip"
+final String zipMappingFileDir = project.file("${BUILD_DIR}/${BUILD_OUTPUT_DIRNAME}").absolutePath
+
+def outputDir
+def outputFilePath
+
+
+println "<<<< gradle version: " + project.gradle.getGradleVersion()
+
+Map specialDependency = null
+Map publicDependency = null
+
+project.ext.getBuildConfig = {
+    return System.getenv(BUILD_PLATFORM_ENV)
+}
+
+project.ext.checkBuildConfig = {
+    String buildCfg = project.getBuildConfig()
+    if (buildCfg) {
+        println "<<<<< BUILD_CONFIG is set"
+    } else {
+        println "<<<<< BUILD_CONFIG is not set"
+    }
+}
+
+project.ext.checkExtConfig = {
+    if (!project.hasProperty("publishToMaven")) {
+        project.ext.publishToMaven = false
+    }
+
+    if (!project.hasProperty("groupId")) {
+        if (project.ext.targetType == "apk") {
+            project.ext.groupId = DEF_APK_GROUP_ID
+        } else {
+            project.ext.groupId = DEF_LIB_GROUP_ID
+        }
+    }
+
+    if (!project.hasProperty("artifactId")) {
+        project.ext.artifactId = project.name
+    }
+
+
+    if (!project.hasProperty("publishVersion")) {
+        project.ext.publishVersion = project.getBuildVersion("unspecified")
+    }
+
+}
+
+// 从系统属性中查找 publish 标记。如果有那么
+project.ext.getPublishFlag = { defPublishFlag ->
+    def paramPublish = System.getProperty("publish")
+    println "1111>>  paramPublish : ${paramPublish}"
+    if (paramPublish) {
+        return paramPublish.toBoolean()
+    }
+    return defPublishFlag
+}
+
+
+project.ext.getVersionCode = { defVersionCode ->
+    String versionCode = System.getProperty("version_code")
+    if (versionCode) {
+        return Integer.parseInt(versionCode.trim())
+    }
+    return defVersionCode
+}
+
+
+project.ext.getBuildVersion = { defVersion ->
+    def buildVersion = System.getProperty("build_version")
+    if (buildVersion) {
+        return buildVersion.trim()
+    }
+    return defVersion
+}
+
+project.ext.getVersionName = { defVersion ->
+    def publishVersion = project.getBuildVersion(defVersion)
+    if (publishVersion) {
+        return "V" + publishVersion
+    }
+    return "V" + defVersion
+}
+
+project.ext.getMavenRepoUser = { defUserName ->
+    def userName = System.getenv("MAVEN_USER")
+    if (userName) {
+        return userName.trim()
+    }
+    return defUserName
+}
+
+project.ext.getMavenRepoPwd = { defPassword ->
+    def password = System.getenv("MAVEN_PASSWORD")
+    if (password) {
+        return password.trim()
+    }
+    return defPassword
+}
+
+project.ext.getSpecialDependency = {
+    String dependencies = System.getenv("dependencies")
+    if (!dependencies) {
+        dependencies = System.getProperty("dependencies")
+    }
+
+    if (!dependencies) {
+        return [:]
+    }
+
+    def result = [:]
+    dependencies = dependencies.replaceAll("\\s+", ' ')
+    def dependsList = dependencies.split(" ")
+    dependsList.each { dependsItem ->
+        def items = dependsItem.split(':')
+        if (items && items.size() == 3) {
+            String key = "${items[0].trim()}:${items[1].trim()}"
+            String ver = items[2].trim()
+            result.put(key, ver)
+        } else {
+            assert false: "<<<< 依赖配置错误: " + dependsItem
+        }
+    }
+    return result
+}
+
+
+project.ext.getPublicDependencies = {
+    def result = [:]
+
+    if (!project.getBuildConfig()) {
+        return result
+    }
+
+    List publicLibsDependencies
+    if (project.hasProperty("getPublicDependenciesCfg")) {
+        publicLibsDependencies = project.getPublicDependenciesCfg()
+    }
+
+    if (!publicLibsDependencies) {
+        return result
+    }
+
+    publicLibsDependencies.each { String dependsItem ->
+        //println "dependsItem: " + dependsItem
+        def items = dependsItem.split(":")
+        if (items && items.size() == 3) {
+            String key = "${items[0].trim()}:${items[1].trim()}"
+            String ver = items[2].trim()
+            result.put(key, ver)
+        } else {
+            assert false: "<<<< 依赖配置错误: " + dependsItem
+        }
+    }
+    return result
+}
+
+project.ext.getDependency = { String defDependency ->
+    if (specialDependency == null) {
+        specialDependency = project.getSpecialDependency()
+        println "<<<< current special dependency: " + specialDependency
+    }
+
+    if (publicDependency == null) {
+        publicDependency = project.getPublicDependencies()
+        println "<<<< current public dependency: " + publicDependency
+    }
+
+    if (specialDependency.isEmpty() && publicDependency.isEmpty()) {
+        return defDependency
+    }
+
+    List items = defDependency.replaceAll("\\s+", '').split(':')
+    if (items && items.size() == 3) {
+        String key = "${items[0]}:${items[1]}"
+        String ver = specialDependency.get(key)
+        if (ver) {
+            return "${key}:${ver}"
+        }
+
+        ver = publicDependency.get(key)
+        if (ver) {
+            return "${key}:${ver}"
+        }
+    }
+
+    return defDependency
+}
+
+
+project.ext.checkExtParameters = {
+    if (!project.ext.groupId) {
+        assert false: "<<<< 错误: 没有指定 groupId！"
+    }
+
+    if (!project.ext.artifactId) {
+        assert false: "<<<< 错误: 没没有指定 artifactId！"
+    }
+
+    if (!project.ext.publishVersion) {
+        assert false: "<<<< 错误: 没有指定发布版本！"
+    }
+
+    if(!System.getenv(BUILD_PLATFORM_ENV)) {
+        if (!project.ext.publishVersion.endsWith(SNAPSHOT_VERSION_SUFFIX)) {
+            //assert false: "<<<< 错误: 本地只允许发布 SNAPSHOT 版本"
+        }
+    }
+
+}
+
+def isAndroid(){
+
+    def isAndroidProject=true
+    if (project.pluginManager.hasPlugin('com.android.application')) {
+        project.ext.targetType = 'apk'
+    } else if (project.pluginManager.hasPlugin('com.android.library')) {
+        project.ext.targetType = 'aar'
+    } else {
+        isAndroidProject=false
+        project.ext.targetType = 'jar'
+    }
+    return isAndroidProject
+
+}
+// 确定 jar的来源。不管是Android还是java项目，都有java源代码
+task sourcesJar(type: Jar) {
+    archiveClassifier.set("sources")
+    if (isAndroid()){
+        from android.sourceSets.main.java.srcDirs
+    }else{
+        from sourceSets.main.java.srcDirs
+    }
+
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier.set("javadoc")
+    from javadoc.destinationDir
+}
+
+//repositories {
+//    maven { url = RELEASE_REPO_URL }
+//    maven { url = SNAPSHOT_REPO_URL }
+//}
+
+
+def publishPreAction = { publishTask ->
+    publishTask.doFirst {
+        println "<<<< task [${name}] doFirst ..."
+
+        if (project.targetType == "apk"
+                //&& project.getBuildConfig()
+                && project.android.buildTypes.release.minifyEnabled) {
+            // apk类型的话，压缩zip文件。到时候打包的时候准备上传？
+            // 压缩mapping文件
+            File mappingDirFile  = project.file("${BUILD_DIR}/${BUILD_OUTPUT_DIRNAME}/mapping")
+            if (mappingDirFile.exists()) {
+                def mappingFilesDir = mappingDirFile.absolutePath
+                println "<<<< zip mapping files from: " + mappingFilesDir.replace(PROJECT_DIR + File.separator, "")
+
+                Zip zipTask = project.tasks.create("zipMappingFiles_${System.currentTimeMillis()}", Zip)
+                zipTask.from(mappingFilesDir)
+                zipTask.include("**/release/mapping.txt", "**/release/seeds.txt", "**/release/usage.txt")
+                zipTask.setDestinationDir(project.file(zipMappingFileDir))
+                zipTask.setArchiveName(zipMappingFileName)
+
+                zipTask.execute()
+            }
+        }else{
+            // 如果是 so，打包debug的 so，现在是cmake了，不是ndk，所以路径要适配兼容
+            File mappingDir  = project.file("${NDK_OBJ_FILE_DIR}")
+            // 对so进行压缩
+            if (mappingDir.exists()) {
+                println "<<<<<<<<<<< zip mapping files"
+                Zip zipTask = project.tasks.create("zipMappingFiles_${System.currentTimeMillis()}", Zip)
+                zipTask.from(mappingDir)
+                zipTask.include("**/*.so")
+                zipTask.setDestinationDir(project.file(zipMappingFileDir))
+                zipTask.setArchiveName(zipMappingFileName)
+
+                zipTask.execute()
+            }
+        }
+
+        // 重命名文件名
+        project.fileTree(outputDir).matching{
+            include "*.${project.targetType}"
+        }.each { targetFile ->
+            println "<<<< target file: " + targetFile.getPath().replace(PROJECT_DIR + File.separator, "")
+
+            File newFile = project.file(outputFilePath)
+            if (targetFile.getName() != newFile.getName()) {
+                if (newFile.exists()) {
+                    newFile.delete()
+                }
+                println "<<<< rename to: " + newFile.getPath().replace(PROJECT_DIR + File.separator, "")
+                targetFile.renameTo(newFile)
+            }
+        }
+    }
+}
+
+
+// 当所有模块的都配置结束后，会执行这个周期函数。在这里可以加入一些task
+project.afterEvaluate {
+
+    //println "<<<< start: " + project.gradle.startParameter.getTaskRequests()
+    println "1111>> afterEvaluate run. has: com.android.application ? " + project.pluginManager
+            .hasPlugin('com' +
+            '.android.application')
+    // 需要判断下是否是Android项目，只有是Android项目才去使用Android的属性
+    if (project.pluginManager.hasPlugin('com.android.application')) {
+        project.ext.targetType = 'apk'
+    } else if (project.pluginManager.hasPlugin('com.android.library')) {
+        project.ext.targetType = 'aar'
+    } else {
+        project.ext.targetType = 'jar'
+    }
+    def hasNdkMappingFile = false
+    if(isAndroid() && project.android.externalNativeBuild.ndkBuild.path){
+        hasNdkMappingFile = true
+    }
+
+    project.checkExtConfig()
+
+    println "<<<< publish to maven ? " + project.ext.publishToMaven
+    println "<<<< publish groupId: " + project.ext.groupId
+    println "<<<< publish artifactId: " + project.ext.artifactId
+    println "<<<< build version: " + project.ext.publishVersion
+    println "<<<< build version code: " + project.getVersionCode()
+    println "<<<< build target type: " + project.ext.targetType
+    println "<<<< hasNdkMappingFile: " + hasNdkMappingFile
+
+    if (!project.publishToMaven) {
+        return
+    }
+
+    project.checkExtParameters()
+
+
+    outputDir = project.file("${BUILD_DIR}/${BUILD_OUTPUT_DIRNAME}/${project.targetType}").absolutePath
+    if (project.ext.targetType == 'jar') {
+        outputDir = project.file("${BUILD_DIR}/libs").absolutePath
+    }
+
+    outputFilePath = project.file("${outputDir}/${project.artifactId}-${project.publishVersion}.${project.targetType}").absolutePath
+    println "<<<< outputFilePath: " + outputFilePath.replace(PROJECT_DIR + File.separator, "")
+
+
+    String repoUrl = SNAPSHOT_REPO_URL
+    if (!project.ext.publishVersion.endsWith(SNAPSHOT_VERSION_SUFFIX)) {
+        repoUrl = RELEASE_REPO_URL
+    }
+    repoUrl='../local_mavenrepo/'
+    println "1111>> 在afterEvaluate() 中配置maven 仓库地址"
+    project.publishing.repositories {
+        //mavenLocal()
+        maven {
+//            credentials {
+//                username = project.getMavenRepoUser(DEF_REPO_USER)
+//                password = project.getMavenRepoPwd(DEF_REPO_PWD)
+//                println "1111>> 仓库用户名： username： ${username}"
+//            }
+            url = repoUrl
+        }
+    }
+    def mappingPath = "${zipMappingFileDir}/${zipMappingFileName}"
+    println "1111>> mappingPath: ${mappingPath}, config publications"
+    project.publishing.publications {
+        "${PUBLICATION_ID}" (MavenPublication) {
+
+            println "1111>> MavenPublication: run !"
+            groupId project.ext.groupId
+            version project.ext.publishVersion
+            artifactId project.ext.artifactId
+//            from components.release 跟这个有设么区别？？
+            artifact project.file(outputFilePath)
+            if (isAndroid()){
+                artifact sourcesJar
+//                artifact javadocJar
+            }else{
+            }
+//
+            println "1111>> MavenPublication, outputFilePath:${outputFilePath}, " +
+                    " hasNdkMappingFile:${hasNdkMappingFile}"
+            if(hasNdkMappingFile){
+                artifact source: file(mappingPath), classifier: 'mapping'
+            }
+
+            // 带上依赖
+            pom.withXml {
+                def dependenciesNode = asNode().appendNode('dependencies')
+
+//                def scopes = [ configurations.compile ]
+                def scopes = [ configurations.implementation ]
+                println "1111>> dependenciesNode, scopes:${scopes}"
+                if(configurations.hasProperty("api")){
+                    scopes.add(configurations.api)
+                }
+                if(configurations.hasProperty("implementation")){
+                    scopes.add(configurations.implementation)
+                }
+                if(configurations.hasProperty("debugImplementation")){
+                    scopes.add(configurations.debugImplementation)
+                }
+                if(configurations.hasProperty("releaseImplementation")){
+                    scopes.add(configurations.releaseImplementation)
+                }
+
+//                if (project.ext.targetType != "jar") {
+//                    scopes.add(configurations.provided)
+//                }
+
+                scopes.each { scope ->
+                    scope.allDependencies.each {
+                        if (it instanceof ModuleDependency) {
+                            boolean isTransitive = ((ModuleDependency) it).transitive
+                            if (!isTransitive) {
+                                println "<<<< not transitive dependency: [${it.group}, ${it.name}, ${it.version}]"
+                                return
+                            }
+                        }
+
+                        if (it.group == "${project.rootProject.name}.libs" || it.version == 'unspecified') {
+                            return
+                        }
+
+                        if (it.group && it.name && it.version) {
+                            def dependencyNode = dependenciesNode.appendNode('dependency')
+                            dependencyNode.appendNode('groupId', it.group)
+                            dependencyNode.appendNode('artifactId', it.name)
+                            dependencyNode.appendNode('version', it.version)
+                            dependencyNode.appendNode('scope', scope.name)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Task targetTask
+    if (project.ext.targetType != "jar") {
+        targetTask = project.tasks.assembleRelease
+    } else {
+        targetTask = project.tasks.jar
+    }
+
+    println "<<<< target Task: " + targetTask.name + ", project.name: " + targetTask.project
+    targetTask.outputs.upToDateWhen { false }
+//    targetTask.onlyIf {
+//        true
+//    }
+
+
+    project.gradle.taskGraph.whenReady {
+        it.allTasks.each { task ->
+
+            if (task.getProject() == project) {
+                //println "<<<< task.name: " + task.name
+
+//                task.doLast {
+//                    println "<<<< task[${task.name}] finish!!!"
+//                }
+                if (task.name == PUBLISH_TASK_NAME) {
+                    publishPreAction(task)
+                }
+            }
+        }
+    }
+
+//    project.tasks.clean.doLast {
+//        println "clean finish!"
+//    }
+//    project.tasks.preBuild.doLast {
+//        println "preBuild finish!"
+//    }
+//
+//    project.tasks.publish.doLast {
+//        println "publish finish!"
+//    }
+
+    project.tasks.whenTaskAdded {
+        //println "<<<< task add: " + it.name
+        if (it.name.startsWith("generatePomFileFor")
+                || it.name.startsWith("publish")) {
+            //it.dependsOn targetTask
+            // 在这里插入了一个更改名字的task，也就是说在publish之前进行改名字
+            it.mustRunAfter targetTask
+        }
+    }
+
+}
+

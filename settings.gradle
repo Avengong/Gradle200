@@ -8,6 +8,8 @@
 rootProject.name = "Gradle777"
 // 第一级目录的sample
 include ':app'
+// 加入 ASM 插件plugin
+include ':demo-gradle-plugin'
 
 // 第二级目录的sample01 非常吊啊 可以自定义目录
 //include ':sample01'
@@ -38,3 +40,4 @@ include ':app'
 
 //include ':gradle-two'
 //include ':gradle-three'
+include ':thread-gradle-plugin'

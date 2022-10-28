@@ -1,0 +1,35 @@
+//apply plugin: 'java'
+apply plugin: 'kotlin'
+project.ext{
+
+    publishToMaven = true
+    groupId = "com.ztsdk.lib"
+    artifactId = "thread-gradle-plugin"
+//    publishVersion = project.getBuildVersion(VERSION_NAME)
+    publishVersion = '1.0.2-SNAPSHOT'
+}
+
+sourceSets {
+    main{
+        java {
+            srcDirs += ['src/main/kotlin/','src/main/java/']
+        }
+        resources {
+            srcDir 'src/main/resources'
+        }
+
+    }
+}
+
+dependencies {
+    // 肯定要依赖asm
+    implementation group: 'org.ow2.asm', name: 'asm', version: '7.1'
+    implementation group: 'org.ow2.asm', name: 'asm-commons', version: '7.1'
+    //必须要依赖gradle api
+    implementation gradleApi()
+    implementation 'com.android.tools.build:gradle:4.2.0'
+    // 使用kotlin，必须要
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:${gradle.KOTLIN_VERSION}"
+}
+apply from :'publish.gradle'
+//apply from :'global_publish2.gradle'

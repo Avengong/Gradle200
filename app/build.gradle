@@ -2,8 +2,15 @@
 //    id 'com.android.application'
 //}
 apply plugin:'com.android.application'
+apply plugin: 'kotlin-android'
 //apply from: "extra_book.gradle"
 //apply from: "chapter04.gradle"
+
+apply plugin: 'com.didiglobal.booster'
+
+apply plugin: 'com.ztsdk.lib-plugin'
+
+
 println "=====app1==projectDir:${projectDir},rootDir:${rootDir}，" +
         "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
 
@@ -62,4 +69,10 @@ dependencies {
     testImplementation 'junit:junit:4.+'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
+repositories {
+    mavenCentral()
+}
+
+

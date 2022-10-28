@@ -1,14 +1,39 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 println "=====rootBuild==projectDir:${projectDir},rootDir:${rootDir}，" +
         "rootProjectNmae: ${rootProject.name} project.name: ${project.name}"
+ext{
+    booster_version="4.13.0"
+    gradle.ext.KOTLIN_VERSION = "1.5.30"
+
+}
 buildscript {
+    ext.kotlin_version = '1.5.32'
+    ext.booster_version = '4.13.0'
+    // todo gradle 判断是否是debug 环境
+    ext.debug = gradle.startParameter.taskNames.any {
+        it.contains('debug') || it.contains('Debug')
+    }
+    println "aven-asm-- isDebug build?? debug: ${debug}"
     repositories {
+        maven { url 'local_mavenrepo/'}
         google()
         mavenCentral()
+        maven { url 'https://oss.sonatype.org/content/repositories/public' }
     }
     dependencies {
 //        classpath "com.android.tools.build:gradle:7.0.3"
+        // todo 7.0 后面再说吧
         classpath "com.android.tools.build:gradle:4.2.0"
+
+
+        classpath "com.didiglobal.booster:booster-gradle-plugin:$booster_version"
+        classpath "com.didiglobal.booster:booster-transform-thread:$booster_version"
+        if (!debug){
+            classpath "com.didiglobal.booster:booster-task-analyser:$booster_version"
+        }
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath("com.ztsdk.lib:thread-gradle-plugin:1.0.5-SNAPSHOT")
+
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -53,6 +78,8 @@ allprojects {
     repositories {
 //        google()
 //        mavenCentral()
+        maven { url 'local_mavenrepo/'}
+        maven { url 'https://oss.sonatype.org/content/repositories/public' }
     }
 
 }

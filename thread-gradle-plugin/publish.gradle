@@ -1,0 +1,148 @@
+// 发布 gradle-plugin 插件
+apply plugin: 'maven-publish'
+
+//version rootProject.ext.VERSION_NAME
+//group rootProject.ext.GROUP
+
+version '1.0.5-SNAPSHOT'
+group 'com.ztsdk.lib'
+// 可以这么定义的
+project.ext{
+    artifactId ='thread-plugin'
+    POM_SCM_URL = "https://github.com/Tencent/Matrix.git"
+    POM_SCM_COMMIT = ""
+
+
+    POM_URL = "https://github.com/Tencent/Matrix"
+    POM_LICENCE_NAME = "BSD License"
+    POM_LICENCE_URL = "https://opensource.org/licenses/BSD-3-Clause"
+    POM_LICENCE_DIST = "repo"
+
+    POM_DEVELOPER_ID = "Tencent Wechat"
+    POM_DEVELOPER_NAME = "Tencent Wechat, Inc."
+
+    POM_NAME = "Matrix for Android"
+    POM_DESCRIPTION = "Matrix is an APM (Application Performance Manage) used in Wechat to monitor, locate and analyse performance problems. It is a plugin style, non-invasive solution and is currently available on iOS, macOS and Android."
+
+}
+def javadocJar = task("javadocJar", type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+def sourcesJar = task("sourcesJar", type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.java.srcDirs
+}
+// pom文件的定义
+def pomConfig = {
+    scm {
+        // 项目的git地址
+        url POM_SCM_URL
+        tag POM_SCM_COMMIT
+    }
+
+    licenses {
+        license {
+            name POM_LICENCE_NAME
+            url POM_LICENCE_URL
+            distribution POM_LICENCE_DIST
+        }
+    }
+
+    developers {
+        developer {
+            // 开发者信息
+            id POM_DEVELOPER_ID
+            name POM_DEVELOPER_NAME
+        }
+    }
+
+    name POM_NAME
+    url POM_URL
+}
+
+ //对于jar类型，需不需要afterEvaluate呢？ 理论上可以，因为 afterEvaluate，本身是对grade任务来说的，而不是对于Android
+// 可是尝试。答案：确实可以，没有问题。
+afterEvaluate {
+
+    publishing {
+        publications {
+            Component(MavenPublication) {
+                // 这是jar包的
+                from components.java
+                groupId = group
+                artifactId = POM_ARTIFACT_ID
+                version = version
+                // 这是打包源码的，如kotlin、java源码。假设没有这个选项，只会打包.class中间文件
+                artifact sourcesJar
+                // 这是代码注释说明
+                artifact javadocJar
+
+                // append additional configurations
+                pom.withXml {
+                    asNode().children().last() + pomConfig
+                    asNode().appendNode('description', POM_DESCRIPTION)
+                }
+            }
+        }
+        repositories{
+
+            maven {
+                url uri('../local_mavenrepo/')
+//            credentials {
+//                username "${getRepositoryUsername()}"
+//                password "${getRepositoryPassword()}"
+//            }
+            }
+        }
+
+    }
+}
+// 假设我需要改产物名字，是在哪个步骤去做？
+// 答案：理论上应该是打包完成后，在发布前去修改产物的名字。所以选在在publish之前就行。
+
+task buildAndPublishToLocalMaven(type: Copy, dependsOn: ['build', 'publishToMavenLocal']) {
+    group = 'publishing'
+
+    // save artifacts files to artifacts folder
+    from configurations.archives.allArtifacts.files
+    into "${rootProject.buildDir}/outputs/artifacts/"
+    rename {String fileName ->
+        fileName.replace("release.aar", "${version}.aar")
+    }
+
+    doLast {
+        println "* published to maven local: ${project.group}:${project.name}:${project.version}"
+    }
+}
+
+task buildAndPublishRepo(type: Copy, dependsOn: ['build', 'publish']) {
+    group = "publishing"
+
+    // save artifacts files to artifacts folder
+    from configurations.archives.allArtifacts.files
+    into "${rootProject.buildDir}/outputs/artifacts/"
+    rename {String fileName ->
+        fileName.replace("release.aar", "${version}.aar")
+    }
+
+    doLast {
+        println "* published to repo: ${project.group}:${project.name}:${project.version}"
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
