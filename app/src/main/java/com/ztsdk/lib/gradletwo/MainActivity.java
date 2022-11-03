@@ -9,6 +9,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+//        name:onCreate , descriptor:(Landroid/os/Bundle;)V, signature:null
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 

@@ -6,7 +6,7 @@ project.ext{
     groupId = "com.ztsdk.lib"
     artifactId = "thread-gradle-plugin"
 //    publishVersion = project.getBuildVersion(VERSION_NAME)
-    publishVersion = '1.0.2-SNAPSHOT'
+    publishVersion = '1.0.6-SNAPSHOT'
 }
 
 sourceSets {
@@ -22,12 +22,19 @@ sourceSets {
 }
 
 dependencies {
-    // 肯定要依赖asm
-    implementation group: 'org.ow2.asm', name: 'asm', version: '7.1'
-    implementation group: 'org.ow2.asm', name: 'asm-commons', version: '7.1'
     //必须要依赖gradle api
     implementation gradleApi()
+    // 根据这个版本的AGP来开发插件
     implementation 'com.android.tools.build:gradle:4.2.0'
+
+
+    // 如果不修改class文件，可以不依赖asm。但是做插件就是要修改class文件！
+    implementation group: 'org.ow2.asm', name: 'asm', version: '7.1'
+    implementation group: 'org.ow2.asm', name: 'asm-commons', version: '7.1'
+    implementation group: 'org.ow2.asm', name: 'asm-util', version: '7.1'
+
+    implementation "commons-io:commons-io:2.6"
+
     // 使用kotlin，必须要
     implementation "org.jetbrains.kotlin:kotlin-stdlib:${gradle.KOTLIN_VERSION}"
 }
