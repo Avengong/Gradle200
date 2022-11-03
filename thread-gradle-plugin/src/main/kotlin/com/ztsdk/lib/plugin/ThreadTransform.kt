@@ -207,10 +207,12 @@ class ThreadTransform : Transform() {
         println("拷贝单个文件，name：${inputFile.name}, absolutePath:${inputFile?.absolutePath}")
         // 是否需要transform
         if (inputFile.name.endsWith(".class")) {
-
             copyFile(inputFile, destFile)
+            FileUtils.copyFileToDirectory(destFile, destDirectory)
+        } else {
+            FileUtils.copyFile(inputFile, destFile) // 待验证,可行。
         }
-        FileUtils.copyFile(inputFile, destFile) // 待验证,可行。
+
 
         // 方式二 可行。
 //        FileUtils.copyFileToDirectory(file, destDirectory)
@@ -238,12 +240,14 @@ class ThreadTransform : Transform() {
             // ---------------------开始处理
             if (file.name.contains(".class")) {
                 copyFile(file, destFile)
+                FileUtils.copyFileToDirectory(destFile, destDirectory)
+            } else {
+                FileUtils.copyFileToDirectory(file, destDirectory)
             }
-//            FileUtils.copyFile(file, destFile)
 
             // ---------------------开始处理
         }
-        FileUtils.copyDirectory(dirInput.file, destDirectory)
+//        FileUtils.copyDirectory(dirInput.file, destDirectory)
 
     }
 

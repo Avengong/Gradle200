@@ -17,8 +17,8 @@ public class ThreadUtils {
         }
 
         @JvmStatic
-        fun printName(MainActivity: String) {
-            Log.d(TAG, "ThreadUtils-printName go ")
+        fun printName(name: String) {
+            Log.d(TAG, "ThreadUtils-printName go :$name ")
         }
     }
 
