@@ -15,9 +15,12 @@ class HelloMethodVisitor(api: Int, methodVisitor: MethodVisitor, access: Int, na
         mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         mv.visitLdcInsn("Hello World!");
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false)
-
         if (name.equals("onCreate")) {
             mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "test", "()V", false)
+
+            mv.visitLdcInsn("MainActivity");
+            mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "printName", "(Ljava/lang/String;)V", false);
+
         }
 
     }
