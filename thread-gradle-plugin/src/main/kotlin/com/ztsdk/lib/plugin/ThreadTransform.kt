@@ -173,13 +173,13 @@ class ThreadTransform : Transform() {
 
                         println("processDirectoryInput added !!, name:${file.name} ")
                         if (destFile != null) {
-                            transformSingleFile(file, destFile, destDirectory)
+                            transformIncrementalSingleFile(file, destFile, destDirectory)
                         }
                     }
                     Status.CHANGED -> {
                         println("processDirectoryInput changed !!, name:${file.name}  ")
                         if (destFile != null) {
-                            transformSingleFile(file, destFile, destDirectory)
+                            transformIncrementalSingleFile(file, destFile, destDirectory)
                         }
                     }
                     Status.REMOVED -> {
@@ -203,10 +203,12 @@ class ThreadTransform : Transform() {
     /**
      * 增量编译单个源码文件
      */
-    private fun transformSingleFile(inputFile: File, destFile: File, destDirectory: File?) {
+    private fun transformIncrementalSingleFile(inputFile: File, destFile: File, destDirectory: File?) {
         println("拷贝单个文件，name：${inputFile.name}, absolutePath:${inputFile?.absolutePath}")
         // 是否需要transform
         if (inputFile.name.endsWith(".class")) {
+            if (destFile.exists())
+                FileUtils.delete(destFile)
             copyFile(inputFile, destFile)
             FileUtils.copyFileToDirectory(destFile, destDirectory)
         } else {

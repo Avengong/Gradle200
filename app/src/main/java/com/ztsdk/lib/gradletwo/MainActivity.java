@@ -3,6 +3,9 @@ package com.ztsdk.lib.gradletwo;
 import android.os.Bundle;
 import android.util.Log;
 
+
+import com.zygote.lib.insight.api.Insight;
+
 import androidx.appcompat.app.AppCompatActivity;
 
 
@@ -17,7 +20,8 @@ public class MainActivity extends AppCompatActivity {
 //        ThreadUtils.test();
 //        ThreadUtils.printName(this.getClass().getName());
 
-        Log.d("TAG", "debug--");
+//        Log.d("ThreadUtils", "debug--");
+        Insight.getInstance().init(Insight.newConfig().setApplication(getApplication()));
 
     }
 }

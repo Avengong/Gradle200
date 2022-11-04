@@ -15,6 +15,8 @@ class HelloMethodVisitor(api: Int, methodVisitor: MethodVisitor, access: Int, na
         mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
         mv.visitLdcInsn("Hello World!");
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false)
+
+
         if (name.equals("onCreate")) {
             mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "test", "()V", false)
 
@@ -25,6 +27,34 @@ class HelloMethodVisitor(api: Int, methodVisitor: MethodVisitor, access: Int, na
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;", false);
             mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Class", "getName", "()Ljava/lang/String;", false);
             mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "printName", "(Ljava/lang/String;)V", false);
+
+
+
+
+            mv.visitMethodInsn(INVOKESTATIC, "com/zygote/lib/insight/api/Insight", "getInstance", "()Lcom/zygote/lib/insight/api/Insight;", false);
+            mv.visitMethodInsn(
+                INVOKESTATIC,
+                "com/zygote/lib/insight/api/Insight",
+                "newConfig",
+                "()Lcom/zygote/lib/insight/global/InsightConfig;",
+                false
+            );
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "com/ztsdk/lib/gradletwo/MainActivity", "getApplication", "()Landroid/app/Application;", false);
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                "com/zygote/lib/insight/global/InsightConfig",
+                "setApplication",
+                "(Landroid/app/Application;)Lcom/zygote/lib/insight/global/InsightConfig;",
+                false
+            );
+            mv.visitMethodInsn(
+                INVOKEVIRTUAL,
+                "com/zygote/lib/insight/api/Insight",
+                "init",
+                "(Lcom/zygote/lib/insight/global/InsightConfig;)V",
+                false
+            );
 
         }
 

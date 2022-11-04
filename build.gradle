@@ -32,7 +32,7 @@ buildscript {
             classpath "com.didiglobal.booster:booster-task-analyser:$booster_version"
         }
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath("com.ztsdk.lib:thread-gradle-plugin:1.0.31-SNAPSHOT")
+        classpath("com.ztsdk.lib:thread-gradle-plugin:1.0.38-SNAPSHOT")
 
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -78,6 +78,14 @@ allprojects {
     repositories {
 //        google()
 //        mavenCentral()
+        mavenLocal()
+        maven {url "http://nexus.2tianxin.com/nexus/repository/android-snapshots/"}
+        maven {url "http://nexus.2tianxin.com/nexus/repository/android-releases/"}
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+
+        maven { url "https://jitpack.io" }
         maven { url 'local_mavenrepo/'}
         maven { url 'https://oss.sonatype.org/content/repositories/public' }
     }
