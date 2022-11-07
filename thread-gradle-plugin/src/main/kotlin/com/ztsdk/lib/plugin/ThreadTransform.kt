@@ -7,6 +7,7 @@ import org.apache.commons.io.IOUtils
 import org.gradle.api.logging.Logging
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
+import java.awt.SystemColor
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -69,6 +70,7 @@ class ThreadTransform : Transform() {
             outputProvider?.deleteAll()
         }
 
+        var start = System.currentTimeMillis()
         // 1. 遍历所有的输入源：
         inputs?.forEach { input ->
             // 1.1 得到源码中的 所有文件夹
@@ -85,6 +87,9 @@ class ThreadTransform : Transform() {
                 processJarInput(transformInvocation, jarInput, outputProvider)
             }
         }
+
+        var end = System.currentTimeMillis()
+        println("ThreadTransform cost : (${end - start}) ms")
     }
 
     // 根据每一个jarinput 来进行处理
@@ -297,10 +302,10 @@ class ThreadTransform : Transform() {
         if (inputFile.name.endsWith(".class")) {
             if (destFile.exists())
                 FileUtils.delete(destFile)
-//            processASMClassFile(inputFile, destFile)
-//            FileUtils.copyFileToDirectory(destFile, destDirectory)
-
-            FileUtils.copyFileToDirectory(inputFile, destDirectory)
+            processASMClassFile(inputFile, destFile)
+            FileUtils.copyFileToDirectory(destFile, destDirectory)
+//
+//            FileUtils.copyFileToDirectory(inputFile, destDirectory)
 
         } else {
             FileUtils.copyFile(inputFile, destFile) // 待验证,可行。
@@ -332,10 +337,10 @@ class ThreadTransform : Transform() {
             var destFile = File(destDirectory, file.name)
             // ---------------------开始处理
             if (file.name.contains(".class")) {
-//                processASMClassFile(file, destFile)
-//                FileUtils.copyFileToDirectory(destFile, destDirectory)
+                processASMClassFile(file, destFile)
+                FileUtils.copyFileToDirectory(destFile, destDirectory)
 
-                FileUtils.copyFileToDirectory(file, destDirectory)
+//                FileUtils.copyFileToDirectory(file, destDirectory)
             } else {
                 FileUtils.copyFileToDirectory(file, destDirectory)
             }

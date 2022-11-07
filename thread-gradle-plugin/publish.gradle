@@ -4,7 +4,7 @@ apply plugin: 'maven-publish'
 //version rootProject.ext.VERSION_NAME
 //group rootProject.ext.GROUP
 
-version '1.0.31-SNAPSHOT'
+version '1.0.33-SNAPSHOT'
 group 'com.ztsdk.lib'
 // 可以这么定义的
 project.ext{

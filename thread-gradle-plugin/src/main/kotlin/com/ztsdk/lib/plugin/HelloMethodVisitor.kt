@@ -12,9 +12,9 @@ class HelloMethodVisitor(api: Int, methodVisitor: MethodVisitor, access: Int, na
 //        System.out.println("Hello World!")
         println("onMethodEnter-----name:$name,descriptor:$descriptor")
         //opcode, owner, name,descriptor
-//        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-//        mv.visitLdcInsn("Hello World!");
-//        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false)
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+        mv.visitLdcInsn("Hello World!");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V", false)
 
 
 //        if (name.equals("onCreate")) {
@@ -58,8 +58,14 @@ class HelloMethodVisitor(api: Int, methodVisitor: MethodVisitor, access: Int, na
 //
 //        }
 
-        if (name.equals("init")) {
+
+        if (name.equals("init") && descriptor?.contains("(Lcom/zygote/lib/insight/global/InsightConfig;)V") == true) {
+            mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "test", "()V", false)
+
+            mv.visitLdcInsn("you know my mean?");
+            mv.visitMethodInsn(INVOKESTATIC, "com/ztsdk/lib/gradletwo/ThreadUtils", "printName", "(Ljava/lang/String;)V", false);
             println("onMethodEnter----init method-name:$name,descriptor:$descriptor")
+
         }
     }
 
