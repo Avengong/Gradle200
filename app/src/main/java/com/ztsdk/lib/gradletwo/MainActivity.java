@@ -1,5 +1,6 @@
 package com.ztsdk.lib.gradletwo;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -9,7 +10,7 @@ import com.zygote.lib.insight.api.Insight;
 import androidx.appcompat.app.AppCompatActivity;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -3,12 +3,17 @@ package com.ztsdk.lib.plugin
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
+import org.apache.commons.io.IOUtils
 import org.gradle.api.logging.Logging
 import org.objectweb.asm.ClassReader
 import org.objectweb.asm.ClassWriter
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.InputStream
+import java.util.jar.JarFile
+import java.util.jar.JarOutputStream
+import java.util.zip.ZipEntry
 
 class ThreadTransform : Transform() {
     val _logger = Logging.getLogger(ThreadTransform::class.java)
@@ -101,17 +106,13 @@ class ThreadTransform : Transform() {
                     // 啥都不做
                     println("processJarInput notchanged !!, name:${jarInput.name} ")
                 }
-                Status.ADDED -> {
+                Status.ADDED, Status.CHANGED -> {
                     // 可以修改
 
                     println("processJarInput added !!, name:${jarInput.name} ")
                     transformFromJar(jarInput, destFile)
                 }
-                Status.CHANGED -> {
-                    println("processJarInput changed !!, name:${jarInput.name} ")
-                }
                 Status.REMOVED -> {
-
                     println("processJarInput removed !!, name:${jarInput.name} ")
                     // 删掉这个文件
                     if (destFile?.exists() == true) {
@@ -131,18 +132,105 @@ class ThreadTransform : Transform() {
     }
 
     private fun transformFromJar(jarInput: JarInput, destFile: File?) {
-        val allFiles = FileUtils.getAllFiles(jarInput.file)
+//        val allFiles = FileUtils.getAllFiles(jarInput.file)
+        // 第二种方式  其实size=1，也就是一个东西，草! 因此，直接处理就好了！
+//        allFiles.forEach { file ->
+        /**
+         * jarName: ${jarInput.file.name},
+         * name：${file.name}
+         * 这两个是一样的。 xx.jar。
+         */
+//            println("ASM---第三方class文件 jarInputName: ${jarInput.name}，jarName: ${jarInput.file.name}, name：${file.name} ，size:${allFiles.size()}")
+        // 获取目标文件 38.jar，因此要处理jar文件，怎么搞？
+//        }
 
         // 注意，在这行代码前，我们都是以jar为单位处理，从这里开始遍历是jar里面的所有class类文件
-        allFiles.forEach { file ->
-            println("ASM---第三方class文件 name：${file.name}")
-            // 获取目标文件
-            // ---------------------开始处理
-            //
-        }
-        // 将处理后的jar copy到dest
-        FileUtils.copyFile(jarInput.file, destFile)
+        val jarInFile = jarInput.file
 
+        var jarFile = JarFile(jarInFile)
+
+        // 构建一个temp.jar 文件
+        val tmpFile = File(jarInFile.parent + File.separator + "${jarInFile.name}_classes_temp.jar")
+        // 避免上次的缓存被重复插入
+        if (tmpFile.exists()) {
+            tmpFile.delete()
+        }
+        // 建立输出流，注意是 JarOutput
+        val jarOutputStream = JarOutputStream(FileOutputStream(tmpFile))
+
+        val enumeration = jarFile.entries()
+        while (enumeration.hasMoreElements()) {
+            val jarEntry = enumeration.nextElement()
+            // jar里每个元素的名称，对于java来说，就是类名(文件名)
+            val entryName = jarEntry.name
+
+//            entryName：
+//            com/alibaba/sdk/android/utils/crashdefend/c.class
+//            com/alibaba/sdk/android/utils/AMSDevReporter$AMSReportStatusEnum.class
+//            org/greenrobot/eventbus/EventBus.class,
+//            com/google/gson/internal/bind/TimeTypeAdapter$1.class
+//            kotlin/sequences/_SequencesKt.kotlin_metadata
+//            com/bumptech/glide/load/engine/OriginalKey.class,
+//            androidx/appcompat/R$bool.class,
+//            pub/devrel/easypermissions/R$integer.class
+//            com/ztsdk/lib/gradletwo/R$dimen.class,
+
+//            jarInFile.name： 45.jar
+//            jarInFile.parent: :/Users/avengong/Desktop/demos/Gradle200/app/build/intermediates/transforms/booster/debug
+
+            println("ASM---第三方lib entryName：${entryName},jarInFileName:${jarInFile.name}")
+
+            // 封装成zipEntry why？ jar本身就是可以改成zip格式，然后解压的
+            val zipEntry = ZipEntry(entryName)
+            // 针对jarEntry构建输入流
+            val inputStream = jarFile.getInputStream(jarEntry)
+
+//            if (shouldProcessClass(entryName, extension.blackList)) { TODO 外部配置的东西
+
+            if (shouldProcessClass(entryName, null)) {
+//                project.logger.info("deal with jar file is: $file.absolutePath entryName is $entryName")
+                jarOutputStream.putNextEntry(zipEntry)
+                // 使用 ASM 对 class 文件进行操控
+                processASMJarFile(inputStream)?.let { jarOutputStream.write(it) }
+                inputStream.close()
+//              jarOutputStream.write(runAsm(inputStream, project)) todo
+
+            } else {
+//                project.logger.info("undeal with jar file is: $file.absolutePath entryName is $entryName")
+                // 如果命中黑名单，不做处理，直接输入
+                jarOutputStream.putNextEntry(zipEntry)
+
+                jarOutputStream.write(IOUtils.toByteArray(inputStream))
+            }
+
+            jarOutputStream.closeEntry()
+
+        }
+        jarOutputStream.close()
+        jarFile.close()
+
+        if (jarInFile.exists()) {
+            jarInFile.delete()
+        }
+        // 要把临时文件重命名成源文件的名称
+        tmpFile.renameTo(jarInFile)
+        // 将处理后的jar copy到dest
+        FileUtils.copyFile(jarInFile, destFile)
+
+    }
+
+    private fun processASMJarFile(inputStream: InputStream?): ByteArray? {
+
+        // 用classReader读取class文件
+        val classReader = ClassReader(inputStream)
+
+        // 用classWriter写入修改后的内容到源文件
+//        val classWriter = ClassWriter(ClassWriter.COMPUTE_FRAMES)
+        // 对于jar，需要用   COMPUTE_MAXS，上面的会报 java.lang.TypeNotPresentException:错误
+        val classWriter = ClassWriter(ClassWriter.COMPUTE_MAXS)
+        // 开始读取
+        classReader.accept(HelloClassVisitor(classWriter), ClassReader.EXPAND_FRAMES)
+        return classWriter.toByteArray()
     }
 
     private fun processDirectoryInput(
@@ -209,8 +297,11 @@ class ThreadTransform : Transform() {
         if (inputFile.name.endsWith(".class")) {
             if (destFile.exists())
                 FileUtils.delete(destFile)
-            copyFile(inputFile, destFile)
-            FileUtils.copyFileToDirectory(destFile, destDirectory)
+//            processASMClassFile(inputFile, destFile)
+//            FileUtils.copyFileToDirectory(destFile, destDirectory)
+
+            FileUtils.copyFileToDirectory(inputFile, destDirectory)
+
         } else {
             FileUtils.copyFile(inputFile, destFile) // 待验证,可行。
         }
@@ -241,8 +332,10 @@ class ThreadTransform : Transform() {
             var destFile = File(destDirectory, file.name)
             // ---------------------开始处理
             if (file.name.contains(".class")) {
-                copyFile(file, destFile)
-                FileUtils.copyFileToDirectory(destFile, destDirectory)
+//                processASMClassFile(file, destFile)
+//                FileUtils.copyFileToDirectory(destFile, destDirectory)
+
+                FileUtils.copyFileToDirectory(file, destDirectory)
             } else {
                 FileUtils.copyFileToDirectory(file, destDirectory)
             }
@@ -254,7 +347,10 @@ class ThreadTransform : Transform() {
     }
 
 
-    fun copyFile(inputFile: File, outputFile: File) {
+    /**
+     * 处理源码的 class文件
+     */
+    fun processASMClassFile(inputFile: File, outputFile: File) {
         var inputStream = FileInputStream(inputFile)
         var outputStream = FileOutputStream(outputFile)
         // 用classReader读取class文件
@@ -272,6 +368,36 @@ class ThreadTransform : Transform() {
 
     }
 
+
+    private fun shouldProcessClass(entryName: String, blackList: Set<String>?): Boolean {
+//        val replaceEntryName = entryName.replace("/",".")
+//        blackList?.forEach{
+//            if (replaceEntryName.contains(it))
+//                return false
+//        }
+        if (!entryName.endsWith(".class")
+//                || entryName.contains("$") // kotlin object编译后都是内部类，因此这里要放开
+            || entryName.endsWith("R.class")
+            || entryName.endsWith("BuildConfig.class")
+            || entryName.contains("android/support/")
+            || entryName.contains("android/arch/") // 过滤一些系统的类
+            || entryName.contains("android/app/")
+            || entryName.contains("android/material")
+            || entryName.contains("androidx")
+            // 过滤协议文件
+            || entryName.contains("com/ztsdk/lib/http/rpc/")
+            || entryName.contains("com/ztsdk/lib/http/function/")
+            // 过滤掉库本身
+//                || entryName.contains("com/dysdk/lib/sentry/hook")
+            || entryName.contains("com/dysdk/lib/privacy_annotation")
+        ) {
+            print("checkClassFile className is $entryName false")
+            return false
+        }
+        print("checkClassFile className is $entryName true")
+        return true
+//    }
+    }
 
     fun log(content: String) {
         Logging.getLogger(ThreadTransform::class.java).lifecycle(content)
