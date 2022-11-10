@@ -23,6 +23,10 @@ public class MainActivity extends Activity {
 
 //        Log.d("ThreadUtils", "debug--");
         Insight.getInstance().init(Insight.newConfig().setApplication(getApplication()));
+//        ThreadCapture.Companion.collectThreads();
+
+        AdbUtils.Companion.getThreads();
+
 
     }
 }

@@ -3,6 +3,7 @@ package com.ztsdk.lib.plugin
 import com.android.build.api.transform.*
 import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
+import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.IOUtils
 import org.gradle.api.logging.Logging
 import org.objectweb.asm.ClassReader
@@ -12,6 +13,9 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import java.util.jar.JarFile
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
@@ -55,6 +59,13 @@ class ThreadTransform : Transform() {
         return true
     }
 
+    val NCPU = Runtime.getRuntime().availableProcessors()
+
+    // 这是一个扩展的静态方法
+    private fun QualifiedContent.transform(output: File) = this.file.transform(output)
+    private val QualifiedContent.id: String
+        get() = DigestUtils.md5Hex(file.absolutePath)
+
     override fun transform(transformInvocation: TransformInvocation?) {
         super.transform(transformInvocation)
         //从理论上分析，既然是转换，那么转换完成后，肯定要输出到自己intermediates/transforms/threadPlugin/xxx/ 文件夹下
@@ -70,7 +81,34 @@ class ThreadTransform : Transform() {
             outputProvider?.deleteAll()
         }
 
+        val executor = Executors.newFixedThreadPool(NCPU)
+        try {
+            inputs?.map {
+                //用it的属性在组合成新的collection集合，并返回
+                it.directoryInputs + it.jarInputs
+                // flattern是展开的意思
+            }?.flatten()?.map { input ->
+                executor.submit {
+                    val format = if (input is DirectoryInput) Format.DIRECTORY else Format.JAR
+                    outputProvider?.let { provider ->
+                        input.transform(provider.getContentLocation(input.id, input.contentTypes, input.scopes, format))
+                    }
+                }
+//            var format=if (input is DirectoryInput) Format.DIRECTORY else Format.JAR
+//            outputProvider?.let {
+//                // 调用transform的扩展方法
+//                // id 也是扩展属性
+//                input.transform(it.getContentLocation(input.id, input.contentTypes, input.scopes, format)) }
+
+
+            }
+        } finally {
+            executor.shutdown()
+            executor.awaitTermination(1, TimeUnit.HOURS)
+        }
         var start = System.currentTimeMillis()
+
+
         // 1. 遍历所有的输入源：
         inputs?.forEach { input ->
             // 1.1 得到源码中的 所有文件夹
